@@ -1,0 +1,1114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Financial Risk Appetite Calculator</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.7.1/dist/chart.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.1.1/css/all.min.css">
+    <style>
+        .calculator-section {
+            max-width: 1200px;
+        }
+        .chart-container {
+            position: relative;
+            height: 300px;
+            width: 100%;
+        }
+        .hidden {
+            display: none;
+        }
+        .slider {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 10px;
+            border-radius: 5px;
+            background: #d3d3d3;
+            outline: none;
+        }
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #4F46E5;
+            cursor: pointer;
+        }
+        .slider::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #4F46E5;
+            cursor: pointer;
+        }
+        .risk-meter {
+            height: 20px;
+            background: linear-gradient(to right, #10B981, #FBBF24, #EF4444);
+            border-radius: 10px;
+            position: relative;
+        }
+        .risk-marker {
+            position: absolute;
+            top: -15px;
+            transform: translateX(-50%);
+            width: 10px;
+            height: 30px;
+            background-color: #1F2937;
+            border-radius: 3px;
+        }
+        @media print {
+            .no-print {
+                display: none;
+            }
+            body {
+                width: 100%;
+                margin: 0;
+                padding: 0;
+            }
+            .page-break {
+                page-break-before: avoid;
+            }
+        }
+        /* Custom animation for loading indicator */
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .spin-animation {
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <header class="bg-indigo-600 text-white py-6 shadow-md">
+        <div class="container mx-auto px-4">
+            <h1 class="text-3xl font-bold text-center">Financial Risk Appetite Calculator</h1>
+            <p class="text-center mt-2">Analyze your finances and get personalized investment recommendations</p>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-4 py-8 calculator-section">
+        <div class="bg-white rounded-lg shadow-xl p-6 mb-8">
+            <h2 class="text-2xl font-semibold mb-6 text-gray-800">Personal Financial Information</h2>
+            
+            <form id="financial-form" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- Basic Information -->
+                    <div class="space-y-4">
+                        <div>
+                            <label for="name" class="block text-sm font-medium text-gray-700">Full Name</label>
+                            <input type="text" id="name" name="name" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required>
+                        </div>
+                        
+                        <div>
+                            <label for="age" class="block text-sm font-medium text-gray-700">Age</label>
+                            <input type="number" id="age" name="age" min="18" max="100" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required>
+                        </div>
+                        
+                        <div>
+                            <label for="income-type" class="block text-sm font-medium text-gray-700">Income Type</label>
+                            <select id="income-type" name="income-type" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required>
+                                <option value="monthly">Monthly</option>
+                                <option value="annual">Annual</option>
+                            </select>
+                        </div>
+                        
+                        <div>
+                            <label for="income" class="block text-sm font-medium text-gray-700">Income Amount</label>
+                            <div class="mt-1 relative rounded-md shadow-sm">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <span class="text-gray-500 sm:text-sm">₹</span>
+                                </div>
+                                <input type="number" id="income" name="income" min="0" class="pl-7 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Monthly Expenses -->
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-medium text-gray-700">Monthly Expenses</h3>
+                        
+                        <div>
+                            <label for="rent" class="block text-sm font-medium text-gray-700">Home Rent/EMI</label>
+                            <div class="mt-1 relative rounded-md shadow-sm">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <span class="text-gray-500 sm:text-sm">₹</span>
+                                </div>
+                                <input type="number" id="rent" name="rent" min="0" class="pl-7 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label for="school-fees" class="block text-sm font-medium text-gray-700">Child School Fees</label>
+                            <div class="mt-1 relative rounded-md shadow-sm">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <span class="text-gray-500 sm:text-sm">₹</span>
+                                </div>
+                                <input type="number" id="school-fees" name="school-fees" min="0" class="pl-7 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label for="utilities" class="block text-sm font-medium text-gray-700">Utilities & Groceries</label>
+                            <div class="mt-1 relative rounded-md shadow-sm">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <span class="text-gray-500 sm:text-sm">₹</span>
+                                </div>
+                                <input type="number" id="utilities" name="utilities" min="0" class="pl-7 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label for="medical" class="block text-sm font-medium text-gray-700">Medical</label>
+                            <div class="mt-1 relative rounded-md shadow-sm">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <span class="text-gray-500 sm:text-sm">₹</span>
+                                </div>
+                                <input type="number" id="medical" name="medical" min="0" class="pl-7 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label for="other" class="block text-sm font-medium text-gray-700">Other Liabilities</label>
+                            <div class="mt-1 relative rounded-md shadow-sm">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <span class="text-gray-500 sm:text-sm">₹</span>
+                                </div>
+                                <input type="number" id="other" name="other" min="0" class="pl-7 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Investment Information -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4 border-t border-gray-200">
+                    <div>
+                        <label for="existing-investments" class="block text-sm font-medium text-gray-700">Existing Investments (₹)</label>
+                        <div class="mt-1 relative rounded-md shadow-sm">
+                            <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                <span class="text-gray-500 sm:text-sm">₹</span>
+                            </div>
+                            <input type="number" id="existing-investments" name="existing-investments" min="0" class="pl-7 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label for="risk-appetite" class="block text-sm font-medium text-gray-700">Risk Appetite</label>
+                        <select id="risk-appetite" name="risk-appetite" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required>
+                            <option value="low">Low - Safety First</option>
+                            <option value="medium" selected>Medium - Balanced Approach</option>
+                            <option value="high">High - Growth Focused</option>
+                        </select>
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Financial Goals (select all that apply)</label>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div class="flex items-center">
+                                <input id="retirement" name="goals" type="checkbox" value="retirement" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                <label for="retirement" class="ml-2 block text-sm text-gray-700">Retirement</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input id="education" name="goals" type="checkbox" value="education" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                <label for="education" class="ml-2 block text-sm text-gray-700">Child Education</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input id="home" name="goals" type="checkbox" value="home" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                <label for="home" class="ml-2 block text-sm text-gray-700">Buying a Home</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input id="wealth" name="goals" type="checkbox" value="wealth" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                <label for="wealth" class="ml-2 block text-sm text-gray-700">Wealth Building</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input id="emergency" name="goals" type="checkbox" value="emergency" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                <label for="emergency" class="ml-2 block text-sm text-gray-700">Emergency Fund</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input id="other-goal" name="goals" type="checkbox" value="other" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                                <label for="other-goal" class="ml-2 block text-sm text-gray-700">Other</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="md:col-span-2">
+                        <label for="investment-timeframe" class="block text-sm font-medium text-gray-700">Investment Timeframe (Years)</label>
+                        <input type="range" id="investment-timeframe" name="investment-timeframe" min="1" max="40" value="20" class="slider mt-2">
+                        <div class="flex justify-between mt-1 text-xs text-gray-500">
+                            <span>1 year</span>
+                            <span>10 years</span>
+                            <span>20 years</span>
+                            <span>30 years</span>
+                            <span>40 years</span>
+                        </div>
+                        <p class="text-center mt-2 text-sm font-medium"><span id="timeframe-value">20</span> years</p>
+                    </div>
+                </div>
+                
+                <div class="flex justify-center pt-4">
+                    <button type="submit" id="calculate-button" class="px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Calculate Your Financial Profile
+                    </button>
+                </div>
+            </form>
+        </div>
+        
+        <!-- Loading indicator -->
+        <div id="loading" class="hidden flex flex-col items-center justify-center py-12">
+            <div class="w-16 h-16 border-4 border-indigo-600 border-t-transparent rounded-full spin-animation"></div>
+            <p class="mt-4 text-lg text-gray-700">Analyzing your financial data...</p>
+        </div>
+        
+        <!-- Results Section - Initially Hidden -->
+        <div id="results-section" class="hidden space-y-8">
+            <div class="bg-white rounded-lg shadow-xl p-6">
+                <h2 class="text-2xl font-semibold mb-4 text-gray-800">Financial Analysis Summary</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div class="bg-indigo-50 p-4 rounded-lg">
+                        <h3 class="text-lg font-medium text-indigo-800 mb-2">Monthly Income</h3>
+                        <p id="monthly-income" class="text-3xl font-bold text-indigo-600">₹0</p>
+                    </div>
+                    
+                    <div class="bg-red-50 p-4 rounded-lg">
+                        <h3 class="text-lg font-medium text-red-800 mb-2">Monthly Expenses</h3>
+                        <p id="monthly-expenses" class="text-3xl font-bold text-red-600">₹0</p>
+                    </div>
+                    
+                    <div class="bg-green-50 p-4 rounded-lg">
+                        <h3 class="text-lg font-medium text-green-800 mb-2">Investable Surplus</h3>
+                        <p id="investable-surplus" class="text-3xl font-bold text-green-600">₹0</p>
+                    </div>
+                </div>
+                
+                <div class="mt-6">
+                    <h3 class="text-lg font-medium text-gray-800 mb-2">Risk Appetite Assessment</h3>
+                    <div class="risk-meter">
+                        <div id="risk-marker" class="risk-marker" style="left: 50%;"></div>
+                    </div>
+                    <div class="flex justify-between mt-1 text-sm">
+                        <span class="text-green-600 font-medium">Conservative</span>
+                        <span class="text-yellow-500 font-medium">Moderate</span>
+                        <span class="text-red-600 font-medium">Aggressive</span>
+                    </div>
+                    <p id="risk-description" class="mt-3 text-gray-700">Your risk profile indicates a balanced approach to investing.</p>
+                </div>
+            </div>
+            
+            <!-- Investment Recommendations -->
+            <div class="bg-white rounded-lg shadow-xl p-6">
+                <h2 class="text-2xl font-semibold mb-6 text-gray-800">Recommended Investment Portfolio</h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                        <div class="chart-container">
+                            <canvas id="portfolio-chart"></canvas>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-medium text-gray-800">Allocation Breakdown</h3>
+                        <div id="allocation-breakdown" class="space-y-3">
+                            <!-- Allocation items will be added here dynamically -->
+                        </div>
+                        
+                        <div class="mt-6">
+                            <h3 class="text-lg font-medium text-gray-800">Monthly Contribution Suggestion</h3>
+                            <p id="monthly-contribution" class="text-xl font-semibold text-indigo-600 mt-2">₹0</p>
+                            <p class="text-sm text-gray-600 mt-1">Recommended monthly investment to reach your goals</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-8">
+                    <h3 class="text-lg font-medium text-gray-800 mb-3">Investment Recommendations</h3>
+                    <div id="investment-recommendations" class="space-y-4">
+                        <!-- Recommendations will be added here dynamically -->
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Wealth Projections -->
+            <div class="bg-white rounded-lg shadow-xl p-6">
+                <h2 class="text-2xl font-semibold mb-6 text-gray-800">Wealth Growth Projections</h2>
+                
+                <div class="chart-container h-80">
+                    <canvas id="wealth-projection-chart"></canvas>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mt-8">
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <h3 class="text-md font-medium text-blue-800 mb-2">Projected Wealth at Age 40</h3>
+                        <p id="wealth-40" class="text-2xl font-bold text-blue-600">₹0</p>
+                    </div>
+                    
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <h3 class="text-md font-medium text-blue-800 mb-2">Projected Wealth at Age 50</h3>
+                        <p id="wealth-50" class="text-2xl font-bold text-blue-600">₹0</p>
+                    </div>
+                    
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <h3 class="text-md font-medium text-blue-800 mb-2">Projected Wealth at Age 60</h3>
+                        <p id="wealth-60" class="text-2xl font-bold text-blue-600">₹0</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Risk-Reward Analysis -->
+            <div class="bg-white rounded-lg shadow-xl p-6">
+                <h2 class="text-2xl font-semibold mb-6 text-gray-800">Risk-Reward Analysis</h2>
+                
+                <div class="chart-container h-80">
+                    <canvas id="risk-reward-chart"></canvas>
+                </div>
+                
+                <div class="mt-6">
+                    <h3 class="text-lg font-medium text-gray-800 mb-3">Understanding Your Investment Risks</h3>
+                    <p id="risk-explanation" class="text-gray-700">This risk-reward chart illustrates the relationship between potential returns and the level of risk for different investment types. Higher risk investments generally offer higher potential returns but come with greater volatility.</p>
+                </div>
+            </div>
+            
+            <!-- Action Steps -->
+            <div class="bg-white rounded-lg shadow-xl p-6">
+                <h2 class="text-2xl font-semibold mb-6 text-gray-800">Next Steps</h2>
+                
+                <div class="space-y-4">
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <div class="flex items-center justify-center h-10 w-10 rounded-md bg-indigo-600 text-white">
+                                <i class="fas fa-check"></i>
+                            </div>
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="text-lg font-medium text-gray-800">Start Emergency Fund</h3>
+                            <p class="text-gray-600">Begin with 3-6 months of expenses in a high-yield savings account.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <div class="flex items-center justify-center h-10 w-10 rounded-md bg-indigo-600 text-white">
+                                <i class="fas fa-check"></i>
+                            </div>
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="text-lg font-medium text-gray-800">Set Up Automatic Investments</h3>
+                            <p class="text-gray-600">Establish regular automatic transfers to investment accounts.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <div class="flex items-center justify-center h-10 w-10 rounded-md bg-indigo-600 text-white">
+                                <i class="fas fa-check"></i>
+                            </div>
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="text-lg font-medium text-gray-800">Review Insurance Coverage</h3>
+                            <p class="text-gray-600">Ensure adequate life, health, and property insurance.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="flex">
+                        <div class="flex-shrink-0">
+                            <div class="flex items-center justify-center h-10 w-10 rounded-md bg-indigo-600 text-white">
+                                <i class="fas fa-check"></i>
+                            </div>
+                        </div>
+                        <div class="ml-4">
+                            <h3 class="text-lg font-medium text-gray-800">Consult a Financial Advisor</h3>
+                            <p class="text-gray-600">For personalized guidance, consider meeting with a professional advisor.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-8 text-center">
+                    <button id="reset-form" class="px-6 py-3 border border-gray-300 rounded-md shadow-sm text-base font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        Start Over
+                    </button>
+                    
+                    <button id="email-report" class="ml-4 px-6 py-3 border border-transparent rounded-md shadow-sm text-base font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <i class="fas fa-envelope mr-2"></i> Email This Report
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Email Modal -->
+        <div id="email-modal" class="fixed inset-0 bg-gray-600 bg-opacity-75 flex items-center justify-center z-50 hidden">
+            <div class="bg-white rounded-lg p-6 max-w-md w-full">
+                <h2 class="text-xl font-semibold mb-4">Email Your Financial Report</h2>
+                
+                <form id="email-form" class="space-y-4">
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-gray-700">Email Address</label>
+                        <input type="email" id="email" name="email" class="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm" required>
+                    </div>
+                    
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" id="cancel-email" class="px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Cancel
+                        </button>
+                        <button type="submit" class="px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                            Send Report
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Success message -->
+        <div id="success-message" class="fixed bottom-4 right-4 bg-green-100 border-l-4 border-green-500 text-green-700 p-4 rounded shadow-md hidden">
+            <div class="flex">
+                <div class="flex-shrink-0">
+                    <i class="fas fa-check-circle text-green-500"></i>
+                </div>
+                <div class="ml-3">
+                    <p class="text-sm font-medium" id="success-text">Report sent successfully!</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <footer class="bg-gray-800 text-white py-8">
+        <div class="container mx-auto px-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Financial Risk Calculator</h3>
+                    <p class="text-gray-300">This tool helps you analyze your financial situation and provides personalized investment recommendations based on your risk profile.</p>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Disclaimer</h3>
+                    <p class="text-gray-300">This calculator provides general information and recommendations. It is not a substitute for professional financial advice. Always consult with a qualified financial advisor before making investment decisions.</p>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-semibold mb-4">Privacy</h3>
+                    <p class="text-gray-300">Your data is processed locally in your browser. We do not store or transmit your financial information.</p>
+                </div>
+            </div>
+            
+            <div class="mt-8 pt-6 border-t border-gray-700 text-center text-gray-400">
+                <p>&copy; 2025 Financial Risk Appetite Calculator. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Range slider value display
+            const timeframeSlider = document.getElementById('investment-timeframe');
+            const timeframeValue = document.getElementById('timeframe-value');
+            
+            timeframeSlider.addEventListener('input', function() {
+                timeframeValue.textContent = this.value;
+            });
+            
+            // Form submission
+            const financialForm = document.getElementById('financial-form');
+            const calculateButton = document.getElementById('calculate-button');
+            const loadingIndicator = document.getElementById('loading');
+            const resultsSection = document.getElementById('results-section');
+            
+            financialForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Show loading and hide form
+                loadingIndicator.classList.remove('hidden');
+                calculateButton.disabled = true;
+                
+                // Simulate calculation delay (for UX purposes)
+                setTimeout(function() {
+                    calculateFinancialProfile();
+                    loadingIndicator.classList.add('hidden');
+                    resultsSection.classList.remove('hidden');
+                    window.scrollTo({ top: resultsSection.offsetTop - 20, behavior: 'smooth' });
+                }, 1500);
+            });
+            
+            // Email report functionality
+            const emailButton = document.getElementById('email-report');
+            const emailModal = document.getElementById('email-modal');
+            const cancelEmail = document.getElementById('cancel-email');
+            const emailForm = document.getElementById('email-form');
+            const successMessage = document.getElementById('success-message');
+            
+            emailButton.addEventListener('click', function() {
+                emailModal.classList.remove('hidden');
+            });
+            
+            cancelEmail.addEventListener('click', function() {
+                emailModal.classList.add('hidden');
+            });
+            
+            emailForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                emailModal.classList.add('hidden');
+                
+                // Show success message
+                successMessage.classList.remove('hidden');
+                document.getElementById('success-text').textContent = 'Report sent to ' + document.getElementById('email').value;
+                
+                setTimeout(function() {
+                    successMessage.classList.add('hidden');
+                }, 3000);
+            });
+            
+            // Reset form
+            document.getElementById('reset-form').addEventListener('click', function() {
+                financialForm.reset();
+                resultsSection.classList.add('hidden');
+                calculateButton.disabled = false;
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            });
+            
+            // Function to calculate financial profile based on form data
+            function calculateFinancialProfile() {
+                // Get form values
+                const age = parseInt(document.getElementById('age').value);
+                const incomeType = document.getElementById('income-type').value;
+                const income = parseFloat(document.getElementById('income').value) || 0;
+                const rent = parseFloat(document.getElementById('rent').value) || 0;
+                const schoolFees = parseFloat(document.getElementById('school-fees').value) || 0;
+                const utilities = parseFloat(document.getElementById('utilities').value) || 0;
+                const medical = parseFloat(document.getElementById('medical').value) || 0;
+                const other = parseFloat(document.getElementById('other').value) || 0;
+                const existingInvestments = parseFloat(document.getElementById('existing-investments').value) || 0;
+                const riskAppetite = document.getElementById('risk-appetite').value;
+                const timeframe = parseInt(document.getElementById('investment-timeframe').value);
+                
+                // Calculate monthly income (convert if annual)
+                const monthlyIncome = incomeType === 'annual' ? income / 12 : income;
+                
+                // Calculate monthly expenses
+                const monthlyExpenses = rent + schoolFees + utilities + medical + other;
+                
+                // Calculate investable surplus
+                const investableSurplus = Math.max(0, monthlyIncome - monthlyExpenses);
+                
+                // Update summary section
+                document.getElementById('monthly-income').textContent = formatCurrency(monthlyIncome);
+                document.getElementById('monthly-expenses').textContent = formatCurrency(monthlyExpenses);
+                document.getElementById('investable-surplus').textContent = formatCurrency(investableSurplus);
+                
+                // Calculate recommended monthly contribution (10-20% of surplus based on age)
+                const contributionRate = age < 30 ? 0.2 : age < 45 ? 0.15 : 0.1;
+                const recommendedContribution = Math.min(investableSurplus * 0.5, investableSurplus * contributionRate + 100);
+                
+                document.getElementById('monthly-contribution').textContent = formatCurrency(recommendedContribution);
+                
+                // Update risk profile visualization
+                updateRiskProfile(riskAppetite, age);
+                
+                // Calculate investment allocation
+                const allocation = calculateInvestmentAllocation(riskAppetite, age, timeframe);
+                
+                // Update allocation breakdown
+                updateAllocationBreakdown(allocation);
+                
+                // Create portfolio chart
+                createPortfolioChart(allocation);
+                
+                // Generate investment recommendations
+                generateInvestmentRecommendations(allocation, riskAppetite, age, timeframe);
+                
+                // Create wealth projection chart
+                createWealthProjectionChart(age, recommendedContribution, existingInvestments, allocation, timeframe);
+                
+                // Create risk-reward chart
+                createRiskRewardChart(allocation);
+            }
+            
+            function updateRiskProfile(riskAppetite, age) {
+                const riskMarker = document.getElementById('risk-marker');
+                const riskDescription = document.getElementById('risk-description');
+                
+                let riskLevel;
+                let description;
+                
+                if (riskAppetite === 'low') {
+                    riskLevel = 20;
+                    description = 'Your risk profile indicates a conservative approach to investing. You prioritize capital preservation over growth potential.';
+                } else if (riskAppetite === 'medium') {
+                    riskLevel = 50;
+                    description = 'Your risk profile indicates a balanced approach to investing, seeking moderate growth while maintaining some stability.';
+                } else { // high
+                    riskLevel = 80;
+                    description = 'Your risk profile indicates an aggressive approach to investing, prioritizing growth potential and accepting higher volatility.';
+                }
+                
+                // Adjust for age (younger can take more risk)
+                if (age < 30 && riskAppetite !== 'high') {
+                    riskLevel += 10;
+                    description += ' Given your age, you could potentially consider a slightly more aggressive approach.';
+                } else if (age > 50 && riskAppetite !== 'low') {
+                    riskLevel -= 10;
+                    description += ' Given your age, you might want to consider a slightly more conservative approach as you near retirement.';
+                }
+                
+                riskMarker.style.left = riskLevel + '%';
+                riskDescription.textContent = description;
+            }
+            
+            function calculateInvestmentAllocation(riskAppetite, age, timeframe) {
+                let stocks, bonds, gold, reits, cash;
+                
+                // Base allocation by risk appetite
+                if (riskAppetite === 'low') {
+                    stocks = 30;
+                    bonds = 45;
+                    gold = 10;
+                    reits = 5;
+                    cash = 10;
+                } else if (riskAppetite === 'medium') {
+                    stocks = 50;
+                    bonds = 30;
+                    gold = 10;
+                    reits = 5;
+                    cash = 5;
+                } else { // high
+                    stocks = 70;
+                    bonds = 15;
+                    gold = 5;
+                    reits = 5;
+                    cash = 5;
+                }
+                
+                // Adjust for age - younger can have more stocks
+                const ageAdjustment = Math.max(0, Math.min(15, (60 - age) / 2));
+                
+                // Adjust for timeframe - longer timeframe = more stocks
+                const timeframeAdjustment = Math.max(0, Math.min(10, (timeframe - 10) / 3));
+                
+                // Apply adjustments
+                const totalAdjustment = ageAdjustment + timeframeAdjustment;
+                
+                if (totalAdjustment > 0) {
+                    // Increase stocks, decrease bonds
+                    stocks = Math.min(90, stocks + totalAdjustment);
+                    bonds = Math.max(5, bonds - totalAdjustment);
+                }
+                
+                return {
+                    'Stocks': stocks,
+                    'Bonds': bonds,
+                    'Gold': gold,
+                    'Real Estate': reits,
+                    'Cash': cash
+                };
+            }
+            
+            function updateAllocationBreakdown(allocation) {
+                const container = document.getElementById('allocation-breakdown');
+                container.innerHTML = '';
+                
+                const colors = {
+                    'Stocks': 'bg-blue-500',
+                    'Bonds': 'bg-green-500',
+                    'Gold': 'bg-yellow-500',
+                    'Real Estate': 'bg-purple-500',
+                    'Cash': 'bg-gray-500'
+                };
+                
+                Object.entries(allocation).forEach(([asset, percentage]) => {
+                    const item = document.createElement('div');
+                    item.className = 'flex items-center';
+                    
+                    item.innerHTML = `
+                        <div class="w-4 h-4 rounded-full ${colors[asset]} mr-2"></div>
+                        <div class="flex-grow">
+                            <div class="flex justify-between mb-1">
+                                <span class="text-sm font-medium text-gray-700">${asset}</span>
+                                <span class="text-sm font-medium text-gray-700">${percentage}%</span>
+                            </div>
+                            <div class="w-full bg-gray-200 rounded-full h-2">
+                                <div class="${colors[asset]} h-2 rounded-full" style="width: ${percentage}%"></div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    container.appendChild(item);
+                });
+            }
+            
+            function createPortfolioChart(allocation) {
+                const ctx = document.getElementById('portfolio-chart').getContext('2d');
+                
+                // Clear any existing chart
+                if (window.portfolioChart) {
+                    window.portfolioChart.destroy();
+                }
+                
+                const labels = Object.keys(allocation);
+                const data = Object.values(allocation);
+                
+                const colors = [
+                    'rgba(59, 130, 246, 0.8)',  // blue
+                    'rgba(16, 185, 129, 0.8)',  // green
+                    'rgba(245, 158, 11, 0.8)',  // yellow
+                    'rgba(139, 92, 246, 0.8)',  // purple
+                    'rgba(107, 114, 128, 0.8)'  // gray
+                ];
+                
+                window.portfolioChart = new Chart(ctx, {
+                    type: 'pie',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            data: data,
+                            backgroundColor: colors,
+                            borderColor: '#ffffff',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: {
+                                    font: {
+                                        size: 12
+                                    },
+                                    padding: 20
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `${context.label}: ${context.raw}%`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            function generateInvestmentRecommendations(allocation, riskAppetite, age, timeframe) {
+                const container = document.getElementById('investment-recommendations');
+                container.innerHTML = '';
+                
+                // Generate specific recommendations based on allocation and risk
+                const recommendations = [];
+                
+                // Stocks recommendation
+                if (allocation['Stocks'] >= 50) {
+                    recommendations.push({
+                        title: 'Stock Market Investments',
+                        description: `With a ${allocation['Stocks']}% allocation to stocks, focus on a diversified portfolio of ${riskAppetite === 'high' ? 'growth-oriented stocks and sector ETFs' : 'index funds tracking major indices like S&P 500'}. ${age < 40 ? 'Your longer time horizon allows for higher exposure to equities.' : 'Consider reducing exposure gradually as you approach retirement.'}`
+                    });
+                } else if (allocation['Stocks'] >= 30) {
+                    recommendations.push({
+                        title: 'Stock Market Investments',
+                        description: `With a moderate ${allocation['Stocks']}% allocation to stocks, focus on blue-chip stocks and dividend-paying companies for a balance of growth and income.`
+                    });
+                } else {
+                    recommendations.push({
+                        title: 'Stock Market Investments',
+                        description: `With a conservative ${allocation['Stocks']}% allocation to stocks, focus on large-cap, dividend-paying stocks and low-volatility ETFs to minimize risk.`
+                    });
+                }
+                
+                // Bonds recommendation
+                if (allocation['Bonds'] >= 40) {
+                    recommendations.push({
+                        title: 'Bond Investments',
+                        description: `With a ${allocation['Bonds']}% allocation to bonds, create a ladder of government and high-grade corporate bonds of various maturities for steady income and capital preservation.`
+                    });
+                } else if (allocation['Bonds'] >= 20) {
+                    recommendations.push({
+                        title: 'Bond Investments',
+                        description: `With a ${allocation['Bonds']}% allocation to bonds, consider a mix of government bonds and investment-grade corporate bonds for income generation and moderate stability.`
+                    });
+                } else {
+                    recommendations.push({
+                        title: 'Bond Investments',
+                        description: `With a ${allocation['Bonds']}% allocation to bonds, focus on shorter-term bonds or bond ETFs to provide some portfolio stability while minimizing interest rate risk.`
+                    });
+                }
+                
+                // Gold recommendation if applicable
+                if (allocation['Gold'] >= 10) {
+                    recommendations.push({
+                        title: 'Gold & Precious Metals',
+                        description: `Allocate ${allocation['Gold']}% to gold through physical gold, gold ETFs, or gold mining stocks as a hedge against inflation and market volatility.`
+                    });
+                }
+                
+                // Real Estate recommendation if applicable
+                if (allocation['Real Estate'] >= 5) {
+                    recommendations.push({
+                        title: 'Real Estate Investments',
+                        description: `Consider allocating ${allocation['Real Estate']}% to Real Estate Investment Trusts (REITs) for exposure to real estate without direct property ownership, providing income and diversification.`
+                    });
+                }
+                
+                // Insurance recommendation based on age
+                if (age < 45) {
+                    recommendations.push({
+                        title: 'Insurance Coverage',
+                        description: `Consider term life insurance with coverage 10-15 times your annual expenses to protect dependents. Health insurance with adequate coverage is essential at your age.`
+                    });
+                } else {
+                    recommendations.push({
+                        title: 'Insurance Coverage',
+                        description: `Review your life insurance needs as dependents may be less reliant on your income. Focus on comprehensive health coverage and consider long-term care insurance.`
+                    });
+                }
+                
+                // Cash reserves
+                recommendations.push({
+                    title: 'Emergency Fund',
+                    description: `Maintain ${allocation['Cash']}% in cash or cash equivalents (high-yield savings, money market funds) for emergency needs and financial flexibility.`
+                });
+                
+                // Add recommendations to the container
+                recommendations.forEach(rec => {
+                    const item = document.createElement('div');
+                    item.className = 'bg-gray-50 p-4 rounded-lg';
+                    
+                    item.innerHTML = `
+                        <h4 class="text-md font-medium text-gray-800">${rec.title}</h4>
+                        <p class="text-gray-600 mt-1">${rec.description}</p>
+                    `;
+                    
+                    container.appendChild(item);
+                });
+            }
+            
+            function createWealthProjectionChart(age, monthlyContribution, existingInvestments, allocation, timeframe) {
+                const ctx = document.getElementById('wealth-projection-chart').getContext('2d');
+                
+                // Clear any existing chart
+                if (window.wealthChart) {
+                    window.wealthChart.destroy();
+                }
+                
+                // Calculate expected returns based on allocation
+                const expectedAnnualReturn = (
+                    allocation['Stocks'] * 0.08 + 
+                    allocation['Bonds'] * 0.04 + 
+                    allocation['Gold'] * 0.03 + 
+                    allocation['Real Estate'] * 0.06 + 
+                    allocation['Cash'] * 0.01
+                ) / 100;
+                
+                // Calculate wealth projections
+                const years = Math.min(40, Math.max(timeframe, 60 - age));
+                const labels = [];
+                const dataPoints = [];
+                
+                let currentAge = age;
+                let currentWealth = existingInvestments;
+                
+                for (let i = 0; i <= years; i++) {
+                    labels.push(currentAge);
+                    dataPoints.push(currentWealth);
+                    
+                    // Compound growth plus new contributions
+                    currentWealth = currentWealth * (1 + expectedAnnualReturn) + (monthlyContribution * 12);
+                    currentAge++;
+                }
+                
+                // Update wealth projections
+                const wealth40 = projectWealthAtAge(age, 40, existingInvestments, monthlyContribution, expectedAnnualReturn);
+                const wealth50 = projectWealthAtAge(age, 50, existingInvestments, monthlyContribution, expectedAnnualReturn);
+                const wealth60 = projectWealthAtAge(age, 60, existingInvestments, monthlyContribution, expectedAnnualReturn);
+                
+                document.getElementById('wealth-40').textContent = formatCurrency(wealth40);
+                document.getElementById('wealth-50').textContent = formatCurrency(wealth50);
+                document.getElementById('wealth-60').textContent = formatCurrency(wealth60);
+                
+                // Create the chart
+                window.wealthChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: 'Projected Wealth',
+                            data: dataPoints,
+                            backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                            borderColor: 'rgba(79, 70, 229, 1)',
+                            borderWidth: 2,
+                            fill: true,
+                            tension: 0.3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                display: false
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        return `Age ${context.label}: ${formatCurrency(context.raw)}`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Age'
+                                }
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Projected Wealth'
+                                },
+                                beginAtZero: true,
+                                ticks: {
+                                    callback: function(value) {
+                                        if (value >= 1000000) {
+                                            return '$' + (value / 1000000).toFixed(1) + 'M';
+                                        } else if (value >= 1000) {
+                                            return '$' + (value / 1000).toFixed(1) + 'K';
+                                        }
+                                        return '$' + value;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            function projectWealthAtAge(currentAge, targetAge, startingAmount, monthlyContribution, expectedAnnualReturn) {
+                if (currentAge >= targetAge) {
+                    return startingAmount;
+                }
+                
+                const years = targetAge - currentAge;
+                let wealth = startingAmount;
+                
+                for (let i = 0; i < years; i++) {
+                    wealth = wealth * (1 + expectedAnnualReturn) + (monthlyContribution * 12);
+                }
+                
+                return wealth;
+            }
+            
+            function createRiskRewardChart(allocation) {
+                const ctx = document.getElementById('risk-reward-chart').getContext('2d');
+                
+                // Clear any existing chart
+                if (window.riskRewardChart) {
+                    window.riskRewardChart.destroy();
+                }
+                
+                // Define asset classes with their risk (volatility) and return characteristics
+                const assetClasses = [
+                    { name: 'Cash', risk: 1, return: 1, allocation: allocation['Cash'] },
+                    { name: 'Govt Bonds', risk: 3, return: 3, allocation: allocation['Bonds'] * 0.5 },
+                    { name: 'Corp Bonds', risk: 4, return: 4, allocation: allocation['Bonds'] * 0.5 },
+                    { name: 'Gold', risk: 5, return: 3, allocation: allocation['Gold'] },
+                    { name: 'Real Estate', risk: 6, return: 6, allocation: allocation['Real Estate'] },
+                    { name: 'Large Cap Stocks', risk: 7, return: 7, allocation: allocation['Stocks'] * 0.6 },
+                    { name: 'Small Cap Stocks', risk: 9, return: 8, allocation: allocation['Stocks'] * 0.2 },
+                    { name: 'Emerging Markets', risk: 10, return: 9, allocation: allocation['Stocks'] * 0.2 }
+                ];
+                
+                // Calculate bubble sizes based on allocation
+                const minSize = 10;
+                const maxSize = 50;
+                
+                window.riskRewardChart = new Chart(ctx, {
+                    type: 'bubble',
+                    data: {
+                        datasets: [{
+                            label: 'Asset Classes',
+                            data: assetClasses.map(asset => ({
+                                x: asset.risk,
+                                y: asset.return,
+                                r: minSize + (asset.allocation / 100) * (maxSize - minSize),
+                                name: asset.name,
+                                allocation: asset.allocation
+                            })),
+                            backgroundColor: [
+                                'rgba(156, 163, 175, 0.7)', // Cash
+                                'rgba(16, 185, 129, 0.7)',  // Govt Bonds
+                                'rgba(5, 150, 105, 0.7)',   // Corp Bonds
+                                'rgba(245, 158, 11, 0.7)',  // Gold
+                                'rgba(139, 92, 246, 0.7)',  // Real Estate
+                                'rgba(59, 130, 246, 0.7)',  // Large Cap
+                                'rgba(37, 99, 235, 0.7)',   // Small Cap
+                                'rgba(29, 78, 216, 0.7)'    // Emerging Markets
+                            ],
+                            borderColor: [
+                                'rgba(156, 163, 175, 1)',
+                                'rgba(16, 185, 129, 1)',
+                                'rgba(5, 150, 105, 1)',
+                                'rgba(245, 158, 11, 1)',
+                                'rgba(139, 92, 246, 1)',
+                                'rgba(59, 130, 246, 1)',
+                                'rgba(37, 99, 235, 1)',
+                                'rgba(29, 78, 216, 1)'
+                            ],
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                title: {
+                                    display: true,
+                                    text: 'Risk Level (Volatility)'
+                                },
+                                min: 0,
+                                max: 11
+                            },
+                            y: {
+                                title: {
+                                    display: true,
+                                    text: 'Expected Return'
+                                },
+                                min: 0,
+                                max: 10
+                            }
+                        },
+                        plugins: {
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        const data = context.raw;
+                                        return [
+                                            `${data.name}`,
+                                            `Risk Level: ${data.x}/10`,
+                                            `Expected Return: ${data.y}/10`,
+                                            `Allocation: ${data.allocation.toFixed(1)}%`
+                                        ];
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            
+            // Helper function to format currency
+            function formatCurrency(value) {
+                if (value >= 1000000) {
+                    return '₹' + (value / 1000000).toFixed(2) + ' million';
+                } else if (value >= 1000) {
+                    return '₹' + (value / 1000).toFixed(2) + 'K';
+                }
+                return '₹' + value.toFixed(2);
+            }
+        });
+    </script>
+</body>
+</html>
